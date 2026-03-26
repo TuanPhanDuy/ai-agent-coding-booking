@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vetautet-app
+  namespace: vetautet
+  labels:
+    app: vetautet-app
+spec:
+  replicas: 2          # Start with 2, HPA will scale up/down
+  selector:
+    matchLabels:
+      app: vetautet-app
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0   # Zero-downtime deploys
+  template:
+    metadata:
+      labels:
+        app: vetautet-app
+    spec:
+      containers:
+        - name: vetautet-app
+          image: vetautet-app:latest
+          imagePullPolicy: Never   # use locally built image
+          ports:
+            - containerPort: 1122
+          env:
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:mysql://mysql-service:3306/vetautet"
+            - name: SPRING_DATASOURCE_USERNAME
+              value: "root"
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: root-password
+            - name: SPRING_DATA_REDIS_HOST
+              value: "redis-service"
+            - name: SPRING_DATA_REDIS_PORT
+              value: "6379"
+            - name: LOGSTASH_HOST
+              value: "logstash-service:5044"
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 1122
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 1122
+            initialDelaySeconds: 60
+            periodSeconds: 15
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: app-service
+  namespace: vetautet
+spec:
+  selector:
+    app: vetautet-app
+  ports:
+    - port: 1122
+      targetPort: 1122
+      nodePort: 31122
+  type: NodePort

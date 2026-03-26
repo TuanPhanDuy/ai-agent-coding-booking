@@ -1,0 +1,14 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - namespace.yaml
+  - configmaps/prometheus-config.yaml
+  - configmaps/mysqld-exporter-config.yaml
+  - infrastructure/mysql.yaml
+  - infrastructure/redis.yaml
+  - infrastructure/prometheus-grafana.yaml
+  - kafka/kafka.yaml
+  - monitoring/exporters.yaml
+  - app/deployment.yaml
+  - app/hpa.yaml

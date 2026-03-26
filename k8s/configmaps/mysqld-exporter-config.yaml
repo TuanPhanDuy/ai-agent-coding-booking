@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysqld-exporter-config
+  namespace: vetautet
+data:
+  .my.cnf: |
+    [client]
+    host=mysql-service
+    port=3306
+    user=root
+    password=root1234
