@@ -1,7 +1,5 @@
 package com.xxxx.ddd.infrastructure.cache.redis;
 
-import java.util.concurrent.TimeUnit;
-
 public interface RedisInfrasService {
     // name = "anonystick"
     void setString(String key, String value);

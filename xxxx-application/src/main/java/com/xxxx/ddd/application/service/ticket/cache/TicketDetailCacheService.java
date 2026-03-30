@@ -1,7 +1,5 @@
 package com.xxxx.ddd.application.service.ticket.cache;
 
-import com.github.benmanes.caffeine.cache.Caffeine;
-//import com.google.common.cache.Cache;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.xxxx.ddd.domain.model.entity.Ticket;
@@ -12,8 +10,6 @@ import com.xxxx.ddd.infrastructure.cache.redis.RedisInfrasService;
 import com.xxxx.ddd.infrastructure.distributed.redisson.RedisDistributedLocker;
 import com.xxxx.ddd.infrastructure.distributed.redisson.RedisDistributedService;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -110,7 +106,7 @@ public class TicketDetailCacheService {
             // OK XONG, chung ta review code nay ok ... ddau vaof DDD thoi nao
         } catch (Exception e) {
             throw new RuntimeException(e);
-        }finally {
+        } finally {
             // Lưu ý: Cho dù thành công hay không cũng phải unLock, bằng mọi giá.
             // Lưu ý: Cho dù thành công hay không cũng phải unLock, bằng mọi giá.
             // Lưu ý: Cho dù thành công hay không cũng phải unLock, bằng mọi giá.
@@ -185,7 +181,7 @@ public class TicketDetailCacheService {
             // OK XONG, chung ta review code nay ok ... ddau vaof DDD thoi nao
         } catch (Exception e) {
             throw new RuntimeException(e);
-        }finally {
+        } finally {
             // Lưu ý: Cho dù thành công hay không cũng phải unLock, bằng mọi giá.
             // Lưu ý: Cho dù thành công hay không cũng phải unLock, bằng mọi giá.
             // Lưu ý: Cho dù thành công hay không cũng phải unLock, bằng mọi giá.

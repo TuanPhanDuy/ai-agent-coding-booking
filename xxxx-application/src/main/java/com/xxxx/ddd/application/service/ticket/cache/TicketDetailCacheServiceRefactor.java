@@ -98,7 +98,7 @@ public class TicketDetailCacheServiceRefactor {
             return ticketDetailCache;
         } catch (Exception e) {
             throw new RuntimeException(e);
-        }finally {
+        } finally {
             locker.unlock();
         }
     }
@@ -109,7 +109,7 @@ public class TicketDetailCacheServiceRefactor {
     public TicketDetailCache getTicketDetailDistributedCache(Long ticketId) {
         // 1 - get data
         TicketDetailCache ticketDetailCache = redisInfrasService.getObject(genEventItemKey(ticketId), TicketDetailCache.class);
-        if(ticketDetailCache == null){
+        if (ticketDetailCache == null) {
             log.info("GET TICKET FROM DISTRIBUTED LOCK");
             ticketDetailCache = getTicketDetailDatabase(ticketId);
         }
