@@ -7,8 +7,10 @@ resources:
   - configmaps/mysqld-exporter-config.yaml
   - infrastructure/mysql.yaml
   - infrastructure/redis.yaml
+  - infrastructure/elk.yaml
   - infrastructure/prometheus-grafana.yaml
   - kafka/kafka.yaml
   - monitoring/exporters.yaml
   - app/deployment.yaml
+  - app/deployment-canary.yaml
   - app/hpa.yaml
