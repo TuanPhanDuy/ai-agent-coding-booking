@@ -25,7 +25,7 @@
         <sonar.dynamicAnalysis>reuseReports</sonar.dynamicAnalysis>
         <sonar.projectKey>ai-agent-coding-booking</sonar.projectKey>
         <sonar.projectName>ai-agent-coding-booking</sonar.projectName>
-        <sonar.organization>TuanPhanDuy</sonar.organization>
+        <sonar.organization>tuanphanduy</sonar.organization>
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
     </properties>
 
