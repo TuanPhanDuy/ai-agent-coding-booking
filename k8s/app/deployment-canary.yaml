@@ -17,7 +17,7 @@ spec:
       labels:
         app: vetautet-app   # must match Service selector to receive traffic
         version: canary
-    spec:how
+    spec:
       containers:
         - name: vetautet-app
           image: vetautet-app:canary   # new image version to test

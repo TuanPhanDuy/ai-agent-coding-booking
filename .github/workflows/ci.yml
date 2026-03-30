@@ -1,0 +1,188 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  # ============================================================
+  # JOB 1: Commit Convention Check (Conventional Commits)
+  # ============================================================
+  commit-convention:
+    name: Commit Convention
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check commit messages
+        uses: wagoid/commitlint-github-action@v6
+        with:
+          configFile: .commitlintrc.json
+
+  # ============================================================
+  # JOB 2: Code Style & Smell (Checkstyle + SpotBugs)
+  # ============================================================
+  code-quality:
+    name: Code Style & Smell
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Run Checkstyle
+        run: ./mvnw checkstyle:check -pl xxxx-domain,xxxx-application,xxxx-controller,xxxx-infrastructure --no-transfer-progress
+
+      - name: Run SpotBugs
+        run: ./mvnw spotbugs:check --no-transfer-progress
+
+      - name: Upload Checkstyle report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: checkstyle-reports
+          path: '**/target/checkstyle-result.xml'
+
+  # ============================================================
+  # JOB 3: Build & Test
+  # ============================================================
+  build-and-test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Build and test
+        run: ./mvnw clean verify --no-transfer-progress
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: '**/target/surefire-reports/*.xml'
+
+  # ============================================================
+  # JOB 4: SonarCloud Analysis
+  # ============================================================
+  sonarcloud:
+    name: SonarCloud Analysis
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # required for SonarCloud blame info
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Cache SonarCloud packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+
+      - name: Build and analyze with SonarCloud
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          ./mvnw clean verify sonar:sonar \
+            -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }} \
+            -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }} \
+            -Dsonar.host.url=https://sonarcloud.io \
+            -Dsonar.coverage.jacoco.xmlReportPaths=**/target/site/jacoco/jacoco.xml \
+            --no-transfer-progress
+
+      - name: SonarCloud Quality Gate
+        uses: sonarsource/sonarqube-quality-gate-action@master
+        timeout-minutes: 5
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  # ============================================================
+  # JOB 5: AI Code Review (Claude)
+  # ============================================================
+  ai-code-review:
+    name: AI Code Review
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get changed Java files
+        id: changed-files
+        run: |
+          git diff --name-only origin/${{ github.base_ref }}...HEAD -- '*.java' > changed_files.txt
+          echo "files=$(cat changed_files.txt | tr '\n' ',' | sed 's/,$//')" >> $GITHUB_OUTPUT
+          cat changed_files.txt
+
+      - name: Get diff of changed files
+        id: diff
+        run: |
+          DIFF=$(git diff origin/${{ github.base_ref }}...HEAD -- '*.java' | head -c 15000)
+          echo "diff<<EOF" >> $GITHUB_OUTPUT
+          echo "$DIFF" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: AI Code Review via Claude
+        if: steps.changed-files.outputs.files != ''
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          DIFF=$(git diff origin/${{ github.base_ref }}...HEAD -- '*.java' | head -c 15000)
+
+          RESPONSE=$(curl -s https://api.anthropic.com/v1/messages \
+            -H "x-api-key: $ANTHROPIC_API_KEY" \
+            -H "anthropic-version: 2023-06-01" \
+            -H "content-type: application/json" \
+            -d "$(jq -n \
+              --arg diff "$DIFF" \
+              '{
+                model: "claude-sonnet-4-6",
+                max_tokens: 1500,
+                messages: [{
+                  role: "user",
+                  content: ("You are a senior Java engineer reviewing a PR for a high-performance DDD booking system (Java 21, Spring Boot 3, ~100k TPS target).\n\nReview the following git diff and provide concise feedback on:\n1. **Code smells** - violations of SOLID, DDD layer rules, unnecessary complexity\n2. **Performance** - potential bottlenecks, thread-safety, caching opportunities\n3. **Security** - injection risks, sensitive data exposure\n4. **Suggestions** - specific improvements with code examples if useful\n\nBe concise. If the code looks good, say so. Focus only on significant issues.\n\n```diff\n" + $diff + "\n```")
+                }]
+              }'
+            )")
+
+          REVIEW=$(echo $RESPONSE | jq -r '.content[0].text')
+
+          gh pr comment $PR_NUMBER \
+            --repo $REPO \
+            --body "## AI Code Review (Claude)
+
+          $REVIEW
+
+          ---
+          *Powered by Claude Sonnet — review all suggestions before acting on them.*"
