@@ -41,10 +41,10 @@ jobs:
           cache: maven
 
       - name: Run Checkstyle
-        run: ./mvnw checkstyle:check -pl xxxx-domain,xxxx-application,xxxx-controller,xxxx-infrastructure --no-transfer-progress
+        run: mvn checkstyle:check -pl xxxx-domain,xxxx-application,xxxx-controller,xxxx-infrastructure --no-transfer-progress
 
       - name: Run SpotBugs
-        run: ./mvnw spotbugs:check --no-transfer-progress
+        run: mvn spotbugs:check --no-transfer-progress
 
       - name: Upload Checkstyle report
         if: failure()
@@ -70,7 +70,7 @@ jobs:
           cache: maven
 
       - name: Build and test
-        run: ./mvnw clean verify --no-transfer-progress
+        run: mvn clean verify --no-transfer-progress
 
       - name: Upload test results
         if: always()
@@ -110,7 +110,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
-          ./mvnw clean verify sonar:sonar \
+          mvn clean verify sonar:sonar \
             -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }} \
             -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }} \
             -Dsonar.host.url=https://sonarcloud.io \
