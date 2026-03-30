@@ -89,7 +89,7 @@ jobs:
         if: always()
         run: |
           echo "View full SonarCloud report:"
-          echo "https://sonarcloud.io/project/issues?id=ai-agent-coding-booking&resolved=false"
+          echo "https://sonarcloud.io/project/issues?id=TuanPhanDuy_ai-agent-coding-booking&resolved=false"
 
   # ============================================================
   # JOB 5: AI Code Review (Claude)
