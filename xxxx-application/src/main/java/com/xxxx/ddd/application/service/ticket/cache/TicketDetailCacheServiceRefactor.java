@@ -27,14 +27,14 @@ public class TicketDetailCacheServiceRefactor {
 
     // private static final Logger log = LoggerFactory.getLogger(TicketDetailCacheService.class);
     // use guava
-    private final static Cache<Long, TicketDetailCache> ticketDetailLocalCache = CacheBuilder.newBuilder()
+    private static final Cache<Long, TicketDetailCache> TICKET_DETAIL_LOCAL_CACHE = CacheBuilder.newBuilder()
             .initialCapacity(10)
             .concurrencyLevel(12)
             .expireAfterWrite(5, TimeUnit.MINUTES)
             .build();
 
-    public boolean orderTicketByUser(Long ticketId){
-        ticketDetailLocalCache.invalidate(ticketId); // remove local cache
+    public boolean orderTicketByUser(Long ticketId) {
+        TICKET_DETAIL_LOCAL_CACHE.invalidate(ticketId); // remove local cache
         redisInfrasService.delete(genEventItemKey(ticketId));
         return true;
     }
@@ -49,23 +49,23 @@ public class TicketDetailCacheServiceRefactor {
 
             // User:version, cache:version
             // 1. version = null
-            if (version == null){
+            if (version == null) {
                 log.info("01: GET TICKET FROM LOCAL CACHE: versionUser:{}, versionLocal: {}", version, ticketDetailCache.getVersion());
                 return ticketDetailCache;
             }
 
-            if (version.equals(ticketDetailCache.getVersion())){
+            if (version.equals(ticketDetailCache.getVersion())) {
                 log.info("02: GET TICKET FROM LOCAL CACHE: versionUser:{}, versionLocal: {}", version, ticketDetailCache.getVersion());
                 return ticketDetailCache;
             }
 
             // version < ticketDetailCache.getVersion()
-            if (version < ticketDetailCache.getVersion()){
+            if (version < ticketDetailCache.getVersion()) {
                 log.info("03: GET TICKET FROM LOCAL CACHE: versionUser:{}, versionLocal: {}", version, ticketDetailCache.getVersion());
                 return ticketDetailCache;
             }
 
-            if (version > ticketDetailCache.getVersion()){
+            if (version > ticketDetailCache.getVersion()) {
                 return getTicketDetailDistributedCache(ticketId);
             }
 //            return ticketDetailCache;
@@ -115,7 +115,7 @@ public class TicketDetailCacheServiceRefactor {
         }
         // 2 - put data to local cache
         // lock()
-        ticketDetailLocalCache.put(ticketId, ticketDetailCache); //.. consistency cache
+        TICKET_DETAIL_LOCAL_CACHE.put(ticketId, ticketDetailCache); //.. consistency cache
         // unLock()
         log.info("GET TICKET FROM DISTRIBUTED CACHE");
         return ticketDetailCache;
@@ -127,7 +127,7 @@ public class TicketDetailCacheServiceRefactor {
     public TicketDetailCache getTicketDetailLocalCache(Long ticketId) {
         // get cache from GUAVA
         // get cache from Caffein
-        return ticketDetailLocalCache.getIfPresent(ticketId);
+        return TICKET_DETAIL_LOCAL_CACHE.getIfPresent(ticketId);
     }
 
     private String genEventItemKey(Long ticketId) {

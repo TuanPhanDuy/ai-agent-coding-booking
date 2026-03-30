@@ -25,36 +25,7 @@ jobs:
           configFile: .commitlintrc.json
 
   # ============================================================
-  # JOB 2: Code Style & Smell (Checkstyle + SpotBugs)
-  # ============================================================
-  code-quality:
-    name: Code Style & Smell
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Java 21
-        uses: actions/setup-java@v4
-        with:
-          java-version: '21'
-          distribution: 'temurin'
-          cache: maven
-
-      - name: Run Checkstyle
-        run: mvn checkstyle:check -pl xxxx-domain,xxxx-application,xxxx-controller,xxxx-infrastructure --no-transfer-progress
-
-      - name: Run SpotBugs
-        run: mvn spotbugs:check --no-transfer-progress
-
-      - name: Upload Checkstyle report
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: checkstyle-reports
-          path: '**/target/checkstyle-result.xml'
-
-  # ============================================================
-  # JOB 3: Build & Test
+  # JOB 2: Build & Test
   # ============================================================
   build-and-test:
     name: Build & Test

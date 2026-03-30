@@ -68,7 +68,7 @@ public class TicketDetailCacheService {
         }
 //        log.info("CACHE NO EXIST, START GET DB AND SET CACHE->, {}, {} ", id, version);
         // Tao lock process voi KEY
-        RedisDistributedLocker locker = redisDistributedService.getDistributedLock("PRO_LOCK_KEY_ITEM"+id);
+        RedisDistributedLocker locker = redisDistributedService.getDistributedLock("PRO_LOCK_KEY_ITEM" + id);
         try {
             // 1 - Tao lock
             boolean isLock = locker.tryLock(1, 5, TimeUnit.SECONDS);
@@ -115,8 +115,8 @@ public class TicketDetailCacheService {
     }
 
 
-    private TicketDetail getTicketDetailLocalCache(Long id){
-        try{
+    private TicketDetail getTicketDetailLocalCache(Long id) {
+        try {
             return ticketDetailLocalCache.getIfPresent(id);
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -140,7 +140,7 @@ public class TicketDetailCacheService {
             return ticketDetail;
         }
 
-        RedisDistributedLocker locker = redisDistributedService.getDistributedLock("PRO_LOCK_KEY_ITEM"+id);
+        RedisDistributedLocker locker = redisDistributedService.getDistributedLock("PRO_LOCK_KEY_ITEM" + id);
         try {
             // 1 - Tao lock
             boolean isLock = locker.tryLock(1, 5, TimeUnit.SECONDS);
